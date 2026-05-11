@@ -461,8 +461,8 @@ function buildMeasRows(tbodyId, key) {
     tr.innerHTML = `
       <td><span class="zone-dot" style="background:${ZONE_COLORS[i]}"></span>${cfg.pcts[i]}</td>
       <td>${t} m/s</td>
-      <td><input type="text" id="${key}-w${i}" placeholder="—" inputmode="decimal" pattern="[0-9]*\.?[0-9]*"></td>
-      <td><input type="text" id="${key}-v${i}" placeholder="—" inputmode="decimal" pattern="[0-9]*\.?[0-9]*"></td>
+      <td><input type="text" id="${key}-w${i}" placeholder="—" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"></td>
+      <td><input type="text" id="${key}-v${i}" placeholder="—" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"></td>
     `;
     tbody.appendChild(tr);
   });
@@ -1104,6 +1104,9 @@ function switchTab(tabName) {
       else b.classList.remove('active');
     });
   });
+  if (tabName==='input' && state.players.length>0) {
+    renderResult(state.current, 'result-panel-input');
+  }
   if (tabName==='result' && state.players.length>0) {
     renderResult(state.current, 'result-panel-main');
     updateGroupLabel();
