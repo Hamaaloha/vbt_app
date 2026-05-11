@@ -539,14 +539,15 @@ function addPlayer() {
   const name  = [sei, mei].filter(Boolean).join(' ') || '—';
   const id    = document.getElementById('f-id').value.trim() || '—';
   const gr    = document.getElementById('f-grade').value;
-  const bw    = parseFloat(document.getElementById('f-bw').value) || NaN;
+  const bw    = parseFloat((document.getElementById('f-bw').value || '').replace(',', '.')) || NaN;
   const date  = document.getElementById('f-date').value;
 
+  const toNum = v => parseFloat((v || '').replace(',', '.')) || 0;
   const readZone = (key) => {
     const ws = [], vs = [];
     for (let i=0;i<4;i++) {
-      ws.push(parseFloat(document.getElementById(`${key}-w${i}`).value)||0);
-      vs.push(parseFloat(document.getElementById(`${key}-v${i}`).value)||0);
+      ws.push(toNum(document.getElementById(`${key}-w${i}`).value));
+      vs.push(toNum(document.getElementById(`${key}-v${i}`).value));
     }
     return { ws, vs };
   };
