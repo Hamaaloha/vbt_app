@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0D1B33">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VBT 1RM">
+<title>VBT 1RM 測定システム</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:   #0D1B33;
+  --blue:   #00B4D8;
+  --teal:   #03C49D;
+  --lgray:  #F1F1F1;
+  --mgray:  #ADADAD;
+  --dgray:  #595959;
+  --text:   #1A1A1A;
+  --bg:     #F5F8FF;
+  --z60:    #008DC0;
+  --z70:    #00A66E;
+  --z80:    #D97310;
+  --z90:    #BF1A1A;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Yu Gothic', 'Meiryo', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* ===== HEADER ===== */
+.app-header {
+  background: var(--navy);
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid var(--blue);
+}
+.app-header h1 { font-size: 18px; font-weight: bold; letter-spacing: 0.05em; }
+.app-header span { font-size: 11px; color: var(--mgray); }
+
+/* ===== TABS ===== */
+.tabs { display: flex; background: #fff; border-bottom: 2px solid var(--lgray); padding: 0 16px; }
+.tab-btn {
+  padding: 12px 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--dgray);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all .15s;
+}
+.tab-btn.active { color: var(--navy); border-bottom-color: var(--blue); font-weight: bold; }
+.tab-btn:hover { color: var(--navy); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== LAYOUT ===== */
+.main-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  min-height: calc(100vh - 80px);
+}
+@media (max-width: 900px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .input-panel  { height: auto; overflow-y: visible; border-right: none; border-bottom: 1px solid var(--lgray); }
+  .result-panel { height: auto; overflow-y: visible; }
+}
+
+/* ===== INPUT PANEL ===== */
+.input-panel {
+  background: #fff;
+  border-right: 1px solid var(--lgray);
+  padding: 20px 18px;
+  overflow-y: auto;
+  height: calc(100vh - 80px);
+}
+.section-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--navy);
+  background: var(--lgray);
+  padding: 6px 10px;
+  margin: 16px -18px 10px;
+  border-left: 4px solid var(--blue);
+}
+.section-title:first-child { margin-top: 0; }
+.form-row { margin-bottom: 10px; }
+.form-row label { display: block; font-size: 11px; color: var(--dgray); margin-bottom: 3px; }
+.form-row input, .form-row select {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color .15s;
+}
+.form-row input:focus, .form-row select:focus { border-color: var(--blue); outline: none; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Measurement table */
+.meas-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+.meas-table th {
+  background: var(--navy);
+  color: #fff;
+  padding: 6px 8px;
+  text-align: center;
+  font-weight: normal;
+}
+.meas-table td { padding: 5px 6px; border: 1px solid #eee; text-align: center; }
+.meas-table tr:nth-child(even) td { background: var(--lgray); }
+.meas-table input {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 12px;
+  text-align: right;
+}
+.zone-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+
+.btn-calc {
+  width: 100%;
+  padding: 12px;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: background .15s;
+}
+.btn-calc:hover { background: #1a3160; }
+.player-list { margin-top: 14px; }
+.player-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--lgray);
+  border-radius: 4px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.player-chip.selected { border-color: var(--blue); background: #e8f7fc; }
+.player-chip button {
+  background: none;
+  border: none;
+  color: var(--mgray);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+/* ===== RESULT PANEL ===== */
+.result-panel {
+  padding: 20px;
+  overflow-y: auto;
+  height: calc(100vh - 80px);
+}
+.no-data { color: var(--mgray); text-align: center; padding: 60px 20px; font-size: 15px; }
+
+/* Summary boxes */
+.summary-bar {
+  background: var(--lgray);
+  border-left: 4px solid var(--blue);
+  border-radius: 4px;
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.summary-bar-header {
+  background: var(--navy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 7px 14px;
+}
+.zone-boxes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px; }
+.zone-box {
+  border-radius: 4px;
+  padding: 10px 8px;
+  border: 2px solid;
+  font-size: 12px;
+  text-align: center;
+  background: #fff;
+}
+.zone-box .zb-label { font-size: 10px; color: var(--dgray); }
+.zone-box .zb-speed { font-size: 20px; font-weight: bold; color: var(--navy); line-height: 1.1; }
+.zone-box .zb-range { font-size: 10px; color: var(--dgray); margin-top: 2px; }
+.zone-box .zb-pct { font-size: 10px; font-weight: bold; text-align: right; }
+.zone-box .zb-meas { font-size: 12px; font-weight: bold; margin-top: 6px; border-top: 1px solid #eee; padding-top: 5px; }
+
+/* Charts + table row */
+.chart-table-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+@media (max-width: 1100px) { .chart-table-row { grid-template-columns: 1fr; } }
+.chart-card {
+  background: #fff;
+  border: 1px solid #e0e4f0;
+  border-radius: 6px;
+  padding: 12px;
+}
+.card-title { font-size: 12px; font-weight: bold; color: var(--navy); margin-bottom: 8px; }
+canvas { max-width: 100%; }
+
+/* Zone table */
+.zone-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.zone-table th { background: var(--navy); color: #fff; padding: 6px 10px; text-align: left; }
+.zone-table td { padding: 6px 10px; border-bottom: 1px solid #eee; }
+.zone-table tr.measured td { background: #eef8f4; font-weight: bold; }
+.zone-table tr.rm100 td { background: #e8eefc; font-weight: bold; }
+.zone-table tr:nth-child(even):not(.measured):not(.rm100) td { background: var(--lgray); }
+.color-swatch { display: inline-block; width: 6px; height: 14px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+/* Stats bar */
+.stats-bar {
+  background: var(--navy);
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.stat-cell { padding: 10px 6px; text-align: center; }
+.stat-cell .sc-label { font-size: 10px; font-weight: bold; color: #cde; margin-bottom: 2px; }
+.stat-cell .sc-value { font-size: 16px; font-weight: bold; color: #fff; }
+.stat-cell .sc-desc { font-size: 9px; color: #89a0b8; margin-top: 2px; }
+
+/* Lift nav (BP/SQ) */
+.lift-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.lift-tab {
+  padding: 6px 16px;
+  border: 2px solid var(--lgray);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--dgray);
+}
+.lift-tab.active { border-color: var(--blue); color: var(--navy); font-weight: bold; background: #e8f7fc; }
+
+/* ===== GROUP PANEL ===== */
+.group-panel { padding: 20px; }
+.group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .group-grid { grid-template-columns: 1fr; } }
+.group-stats-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+.group-stats-table th { background: var(--navy); color: #fff; padding: 7px 10px; }
+.group-stats-table td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+.group-stats-table tr:nth-child(even) td { background: var(--lgray); }
+.you-badge { background: var(--teal); color: #fff; border-radius: 3px; padding: 1px 6px; font-size: 10px; font-weight: bold; margin-left: 6px; }
+
+/* ===== MOBILE ===== */
+@media (max-width: 600px) {
+  .app-header { padding: 10px 14px; }
+  .app-header h1 { font-size: 15px; }
+  .tabs { padding: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab-btn { padding: 13px 16px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+  .form-row input, .form-row select { font-size: 16px; padding: 10px; }
+  .meas-table input { font-size: 16px; width: 78px; padding: 6px 4px; }
+  .btn-calc { padding: 16px; font-size: 16px; }
+  .stats-bar { grid-template-columns: repeat(3, 1fr); }
+  .zone-boxes { grid-template-columns: repeat(2, 1fr); }
+  .stat-cell .sc-value { font-size: 14px; }
+  .lift-tab { padding: 10px 14px; font-size: 13px; }
+  .chart-card { padding: 8px; }
+  .group-panel { padding: 12px; }
+  .section-title { margin-left: -14px; margin-right: -14px; padding: 7px 14px; }
+  .input-panel { padding: 14px; }
+  .result-panel { padding: 12px; }
+}
+
+/* ===== PRINT ===== */
+@media print {
+  .app-header, .tabs, .input-panel, .lift-tabs, .main-layout { display: block !important; }
+  .main-layout { grid-template-columns: 1fr !important; }
+  .input-panel { display: none !important; }
+  .result-panel { height: auto; overflow: visible; }
+  .no-data { display: none; }
+  .btn-calc { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>VBT 1RM 測定システム</h1>
+  <span>大阪体育大学スポーツ科学センター</span>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('input')">データ入力</button>
+  <button class="tab-btn" onclick="switchTab('result')">個票</button>
+  <button class="tab-btn" onclick="switchTab('group')">グループ比較</button>
+</div>
+
+<!-- INPUT TAB -->
+<div id="tab-input" class="tab-content active">
+<div class="main-layout">
+  <!-- Left: Form -->
+  <div class="input-panel">
+    <div class="section-title">選手情報</div>
+    <div class="form-grid-2">
+      <div class="form-row">
+        <label>氏名（姓）</label>
+        <input type="text" id="f-sei" placeholder="例：体大">
+      </div>
+      <div class="form-row">
+        <label>氏名（名）</label>
+        <input type="text" id="f-mei" placeholder="例：太郎">
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row">
+        <label>体大ID</label>
+        <input type="text" id="f-id" placeholder="学籍番号">
+      </div>
+      <div class="form-row">
+        <label>学年</label>
+        <select id="f-grade">
+          <option>1年</option><option>2年</option><option>3年</option><option>4年</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row">
+        <label>体重 (kg)</label>
+        <input type="number" id="f-bw" placeholder="60.0" step="0.1" inputmode="decimal">
+      </div>
+      <div class="form-row">
+        <label>測定日</label>
+        <input type="date" id="f-date">
+      </div>
+    </div>
+
+    <div class="section-title">ベンチプレス測定</div>
+    <table class="meas-table">
+      <thead>
+        <tr>
+          <th>ゾーン</th>
+          <th>目標速度</th>
+          <th>重量 (kg)</th>
+          <th>速度 (m/s)</th>
+        </tr>
+      </thead>
+      <tbody id="bp-rows"></tbody>
+    </table>
+
+    <div class="section-title">スクワット測定（任意）</div>
+    <table class="meas-table">
+      <thead>
+        <tr>
+          <th>ゾーン</th>
+          <th>目標速度</th>
+          <th>重量 (kg)</th>
+          <th>速度 (m/s)</th>
+        </tr>
+      </thead>
+      <tbody id="sq-rows"></tbody>
+    </table>
+
+    <button class="btn-calc" onclick="addPlayer()">計算・追加　→</button>
+
+    <div class="section-title">登録選手</div>
+    <div class="player-list" id="player-list">
+      <p style="color:var(--mgray);font-size:12px;">まだ登録がありません</p>
+    </div>
+  </div>
+
+  <!-- Right: Result -->
+  <div class="result-panel" id="result-panel-input">
+    <p class="no-data">← データを入力して「計算・追加」ボタンを押してください</p>
+  </div>
+</div>
+</div>
+
+<!-- RESULT TAB -->
+<div id="tab-result" class="tab-content">
+  <div style="padding:16px 20px;background:#fff;border-bottom:1px solid var(--lgray);display:flex;align-items:center;gap:12px;">
+    <button onclick="navigate(-1)" style="padding:6px 14px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-family:inherit;">‹ 前の選手</button>
+    <strong id="result-player-name" style="font-size:14px;color:var(--navy);">—</strong>
+    <button onclick="navigate(1)" style="padding:6px 14px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-family:inherit;">次の選手 ›</button>
+    <button onclick="window.print()" style="margin-left:auto;padding:6px 16px;background:var(--navy);color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:inherit;">🖨 印刷</button>
+  </div>
+  <div class="result-panel" id="result-panel-main">
+    <p class="no-data">「データ入力」タブで選手を登録してください</p>
+  </div>
+</div>
+
+<!-- GROUP TAB -->
+<div id="tab-group" class="tab-content">
+  <div class="group-panel">
+    <div id="group-content">
+      <p class="no-data">2名以上の選手を登録するとグループ比較が表示されます</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========================
+// CONSTANTS
+// ========================
+const VREF = { BP: 0.17, SQ: 0.30 };
+const CFG = {
+  BP: {
+    label: 'ベンチプレス',
+    vRef: 0.17,
+    targets: [0.77, 0.61, 0.46, 0.32],
+    ranges:  ['0.73-0.81','0.57-0.65','0.42-0.50','0.28-0.36'],
+    pcts:    ['≈60%','≈70%','≈80%','≈90%'],
+  },
+  SQ: {
+    label: 'スクワット',
+    vRef: 0.30,
+    targets: [0.81, 0.68, 0.56, 0.44],
+    ranges:  ['0.77-0.85','0.64-0.72','0.52-0.60','0.40-0.48'],
+    pcts:    ['≈60%','≈70%','≈80%','≈90%'],
+  },
+};
+const ZONE_COLORS = ['#008DC0','#00A66E','#D97310','#BF1A1A']; // 60,70,80,90%
+const ZONE_CATS = [
+  ['100%','最大筋力'],['90%','最大筋力'],
+  ['80%','高負荷'],  ['70%','高負荷'],
+  ['60%','高パワー'],['50%','高パワー'],
+  ['40%','SPパワー'],['30%','SPパワー'],
+];
+
+// ========================
+// STATE
+// ========================
+const state = { players: [], current: 0, charts: {} };
+
+// ========================
+// INIT
+// ========================
+document.addEventListener('DOMContentLoaded', () => {
+  // Set today's date
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  // Build measurement row tables
+  buildMeasRows('bp-rows', 'BP');
+  buildMeasRows('sq-rows', 'SQ');
+});
+
+function buildMeasRows(tbodyId, key) {
+  const cfg = CFG[key];
+  const tbody = document.getElementById(tbodyId);
+  cfg.targets.forEach((t, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="zone-dot" style="background:${ZONE_COLORS[i]}"></span>${cfg.pcts[i]}</td>
+      <td>${t} m/s</td>
+      <td><input type="text" id="${key}-w${i}" placeholder="—" inputmode="decimal" pattern="[0-9]*\.?[0-9]*"></td>
+      <td><input type="text" id="${key}-v${i}" placeholder="—" inputmode="decimal" pattern="[0-9]*\.?[0-9]*"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ========================
+// MATH
+// ========================
+function linReg(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return null;
+  const sx  = xs.reduce((a,b)=>a+b,0);
+  const sy  = ys.reduce((a,b)=>a+b,0);
+  const sxy = xs.reduce((a,x,i)=>a+x*ys[i],0);
+  const sx2 = xs.reduce((a,x)=>a+x*x,0);
+  const d   = n*sx2 - sx*sx;
+  if (Math.abs(d) < 1e-12) return null;
+  const slope = (n*sxy - sx*sy) / d;
+  const b     = (sy - slope*sx) / n;
+  return { slope, b };
+}
+
+function calcResult(ws, vs, vRef, bw) {
+  const ok  = ws.map((w,i) => w>0 && vs[i]>0 && isFinite(w) && isFinite(vs[i]));
+  const wo  = ws.filter((_,i)=>ok[i]);
+  const vo  = vs.filter((_,i)=>ok[i]);
+  if (wo.length < 2) return null;
+
+  const reg = linReg(vo, wo);
+  if (!reg) return null;
+  const { slope, b: L0 } = reg;
+  const V0 = -L0 / slope;
+  const rm = Math.max(0, slope * vRef + L0);
+
+  const meanW = wo.reduce((a,b)=>a+b,0) / wo.length;
+  const ssTot = wo.reduce((a,w)=>a+(w-meanW)**2, 0);
+  const ssRes = wo.reduce((a,w,i)=>a+(w-(slope*vo[i]+L0))**2, 0);
+  const r2    = ssTot===0 ? NaN : 1 - ssRes/ssTot;
+
+  const table = [100,90,80,70,60,50,40,30].map(p => ({
+    pct: p,
+    w: rm * p / 100,
+    v: Math.max(0, V0 * (1 - (rm*p/100) / L0)),
+  }));
+
+  return { L0, V0, rm, bwRatio: rm/bw, aline: L0*V0/4, r2, slope, table, wo, vo, ws, vs, ok };
+}
+
+function nanMean(arr) { const v=arr.filter(x=>isFinite(x)); return v.length?v.reduce((a,b)=>a+b,0)/v.length:NaN; }
+function nanStd(arr)  { const m=nanMean(arr); const v=arr.filter(x=>isFinite(x)); return v.length<2?NaN:Math.sqrt(v.reduce((a,x)=>a+(x-m)**2,0)/(v.length-1)); }
+function fmt1(v)  { return isFinite(v) ? v.toFixed(1) : '—'; }
+function fmt2(v)  { return isFinite(v) ? v.toFixed(2) : '—'; }
+function fmt3(v)  { return isFinite(v) ? v.toFixed(3) : '—'; }
+
+function devScore(val, mu, sd) {
+  if (!isFinite(val)||!isFinite(mu)||!isFinite(sd)||sd===0) return NaN;
+  return (val-mu)/sd*10+50;
+}
+function grade(d) {
+  if (!isFinite(d)) return {g:'-',c:'#aaa'};
+  if (d>=60) return {g:'A',c:'#00a66e'};
+  if (d>=50) return {g:'B',c:'#008DC0'};
+  if (d>=40) return {g:'C',c:'#aaa'};
+  if (d>=30) return {g:'D',c:'#D97310'};
+  return {g:'E',c:'#BF1A1A'};
+}
+
+// ========================
+// PLAYER MANAGEMENT
+// ========================
+function addPlayer() {
+  const sei   = document.getElementById('f-sei').value.trim();
+  const mei   = document.getElementById('f-mei').value.trim();
+  const name  = [sei, mei].filter(Boolean).join(' ') || '—';
+  const id    = document.getElementById('f-id').value.trim() || '—';
+  const gr    = document.getElementById('f-grade').value;
+  const bw    = parseFloat(document.getElementById('f-bw').value) || NaN;
+  const date  = document.getElementById('f-date').value;
+
+  const readZone = (key) => {
+    const ws = [], vs = [];
+    for (let i=0;i<4;i++) {
+      ws.push(parseFloat(document.getElementById(`${key}-w${i}`).value)||0);
+      vs.push(parseFloat(document.getElementById(`${key}-v${i}`).value)||0);
+    }
+    return { ws, vs };
+  };
+
+  const bpData = readZone('BP');
+  const sqData = readZone('SQ');
+  const bp = calcResult(bpData.ws, bpData.vs, VREF.BP, bw);
+  const sq = calcResult(sqData.ws, sqData.vs, VREF.SQ, bw);
+
+  if (!bp) {
+    alert('ベンチプレスの有効データが2点以上必要です（重量・速度が両方入力されている行）');
+    return;
+  }
+
+  const player = {
+    name, id, grade: gr, bw,
+    date: date || '—',
+    sport: '',
+    bp: { ...bp, ws: bpData.ws, vs: bpData.vs },
+    sq: sq ? { ...sq, ws: sqData.ws, vs: sqData.vs } : null,
+  };
+
+  state.players.push(player);
+  state.current = state.players.length - 1;
+  renderPlayerList();
+  renderResult(state.current, 'result-panel-input');
+  renderResult(state.current, 'result-panel-main');
+  updateGroupLabel();
+  if (state.players.length >= 2) renderGroup();
+  // スマホでは個票タブへ自動切り替え
+  if (window.innerWidth < 900) switchTab('result');
+}
+
+function removePlayer(i) {
+  state.players.splice(i, 1);
+  if (state.current >= state.players.length) state.current = Math.max(0, state.players.length-1);
+  renderPlayerList();
+  if (state.players.length > 0) {
+    renderResult(state.current, 'result-panel-input');
+    renderResult(state.current, 'result-panel-main');
+  } else {
+    document.getElementById('result-panel-input').innerHTML = '<p class="no-data">← データを入力して「計算・追加」ボタンを押してください</p>';
+    document.getElementById('result-panel-main').innerHTML  = '<p class="no-data">「データ入力」タブで選手を登録してください</p>';
+  }
+  if (state.players.length >= 2) renderGroup();
+  else document.getElementById('group-content').innerHTML = '<p class="no-data">2名以上の選手を登録するとグループ比較が表示されます</p>';
+}
+
+function selectPlayer(i) {
+  state.current = i;
+  renderPlayerList();
+  renderResult(i, 'result-panel-input');
+  renderResult(i, 'result-panel-main');
+  updateGroupLabel();
+}
+
+function navigate(dir) {
+  const n = state.players.length;
+  if (n === 0) return;
+  state.current = (state.current + dir + n) % n;
+  renderPlayerList();
+  renderResult(state.current, 'result-panel-main');
+  updateGroupLabel();
+}
+
+function updateGroupLabel() {
+  const el = document.getElementById('result-player-name');
+  if (state.players.length === 0) { el.textContent = '—'; return; }
+  const p = state.players[state.current];
+  el.textContent = `${p.name}（${p.date}）`;
+}
+
+function renderPlayerList() {
+  const el = document.getElementById('player-list');
+  if (state.players.length === 0) {
+    el.innerHTML = '<p style="color:var(--mgray);font-size:12px;">まだ登録がありません</p>';
+    return;
+  }
+  el.innerHTML = state.players.map((p,i) => `
+    <div class="player-chip ${i===state.current?'selected':''}" onclick="selectPlayer(${i})">
+      <div>
+        <strong>${p.name}</strong>
+        <span style="color:var(--dgray);font-size:11px;margin-left:6px;">BP: ${fmt1(p.bp.rm)} kg</span>
+        ${p.sq ? `<span style="color:var(--dgray);font-size:11px;"> / SQ: ${fmt1(p.sq.rm)} kg</span>` : ''}
+      </div>
+      <button onclick="event.stopPropagation();removePlayer(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ========================
+// RESULT RENDER
+// ========================
+function renderResult(idx, panelId) {
+  if (state.players.length === 0) return;
+  const p = state.players[idx];
+  const panel = document.getElementById(panelId);
+
+  const hasSQ = !!p.sq;
+  const liftTabsHtml = hasSQ
+    ? `<div class="lift-tabs">
+        <button class="lift-tab active" id="${panelId}-tab-bp" onclick="switchLift('${panelId}','BP')">ベンチプレス</button>
+        <button class="lift-tab" id="${panelId}-tab-sq" onclick="switchLift('${panelId}','SQ')">スクワット</button>
+       </div>`
+    : '';
+
+  panel.innerHTML = `
+    ${liftTabsHtml}
+    <div id="${panelId}-lift-BP">${buildLiftHTML(p, 'BP', panelId)}</div>
+    ${hasSQ ? `<div id="${panelId}-lift-SQ" style="display:none">${buildLiftHTML(p, 'SQ', panelId)}</div>` : ''}
+  `;
+
+  // Render charts after DOM is ready
+  setTimeout(() => {
+    createLVChart(`${panelId}-chart-BP`, p, 'BP');
+    if (hasSQ) createLVChart(`${panelId}-chart-SQ`, p, 'SQ');
+  }, 50);
+}
+
+function switchLift(panelId, key) {
+  ['BP','SQ'].forEach(k => {
+    const el = document.getElementById(`${panelId}-lift-${k}`);
+    const btn = document.getElementById(`${panelId}-tab-${k}`);
+    if (el) el.style.display = k===key ? '' : 'none';
+    if (btn) btn.classList.toggle('active', k===key);
+  });
+}
+
+function buildLiftHTML(player, key, panelId) {
+  const cfg  = CFG[key];
+  const data = key==='BP' ? player.bp : player.sq;
+  if (!data) return '';
+
+  // Summary boxes
+  const boxesHtml = cfg.targets.map((t,i) => {
+    const w = data.ws[i], v = data.vs[i];
+    const hasData = w>0 && v>0;
+    return `
+      <div class="zone-box" style="border-color:${ZONE_COLORS[i]}">
+        <div class="zb-pct" style="color:${ZONE_COLORS[i]}">${cfg.pcts[i]}</div>
+        <div class="zb-label" style="margin-top:2px">目標速度 [m/s]</div>
+        <div class="zb-speed">${t.toFixed(2)}</div>
+        <div class="zb-range">${cfg.ranges[i]}</div>
+        <div class="zb-meas" style="color:${hasData?ZONE_COLORS[i]:'#bbb'}">
+          ${hasData ? `${w.toFixed(1)} kg / ${v.toFixed(2)} m/s` : '— kg / — m/s'}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Stats bar
+  const stats = [
+    ['決定係数 R²', fmt3(data.r2), '測定の信頼性（1.0≒完璧）'],
+    ['1RM重量 [kg]', fmt1(data.rm), '最大挙上重量の推定値'],
+    ['1RM / 体重', fmt2(data.bwRatio), '体重比（相対的な筋力）'],
+    ['L0 [kg]', fmt1(data.L0), '理論上の最大荷重'],
+    ['V0 [m/s]', fmt2(data.V0), '理論上の最大速度'],
+    ['Aline [W]', fmt1(data.aline), '最大理論パワーの目安'],
+  ];
+  const statsHtml = stats.map(([l,v,d]) => `
+    <div class="stat-cell">
+      <div class="sc-label">${l}</div>
+      <div class="sc-value">${v}</div>
+      <div class="sc-desc">${d}</div>
+    </div>`).join('');
+
+  // Zone table
+  const measMap = {90:3, 80:2, 70:1, 60:0}; // pct → zone index
+  const catColor = {'最大筋力':'#BF1A1A','高負荷':'#D97310','高パワー':'#00A66E','SPパワー':'#008DC0'};
+  const tableRows = ZONE_CATS.map(([pct, cat]) => {
+    const p  = parseInt(pct);
+    const zi = measMap[p];
+    const isMeas = zi !== undefined && data.ws[zi] > 0;
+    const calcRow = data.table.find(r => r.pct === p);
+    const dispW = isMeas ? data.ws[zi] : (calcRow ? calcRow.w : NaN);
+    const dispV = isMeas ? data.vs[zi] : (calcRow ? calcRow.v : NaN);
+    const cls   = p===100 ? 'rm100' : (isMeas ? 'measured' : '');
+    return `
+      <tr class="${cls}">
+        <td><span class="color-swatch" style="background:${catColor[cat]||'#aaa'}"></span>${cat}</td>
+        <td>${pct}</td>
+        <td style="${isMeas?'font-weight:bold;color:#0D1B33':''}">${fmt1(dispW)}</td>
+        <td style="${isMeas?'font-weight:bold;color:#008DC0':''}">${fmt2(dispV)}</td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <div class="summary-bar" style="margin-bottom:12px">
+      <div class="summary-bar-header">${cfg.label}&emsp;1RM基準速度: ${cfg.vRef.toFixed(2)} m/s</div>
+      <div class="zone-boxes">${boxesHtml}</div>
+    </div>
+
+    <div class="chart-table-row">
+      <div class="chart-card">
+        <div class="card-title">Load-Velocity Profile</div>
+        <canvas id="${panelId}-chart-${key}" height="220"></canvas>
+      </div>
+      <div class="chart-card" style="overflow-y:auto;max-height:320px">
+        <div class="card-title">強度ゾーン表</div>
+        <table class="zone-table">
+          <thead><tr><th>区分</th><th>%1RM</th><th>重量 [kg]</th><th>速度 [m/s]</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="stats-bar">${statsHtml}</div>
+  `;
+}
+
+// ========================
+// CHART: L-V PROFILE
+// ========================
+function createLVChart(canvasId, player, key) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const data = key==='BP' ? player.bp : player.sq;
+  if (!data) return;
+
+  // Destroy old chart if exists
+  if (state.charts[canvasId]) { state.charts[canvasId].destroy(); }
+
+  const { L0, V0, rm } = data;
+  const vRef = CFG[key].vRef;
+
+  // Regression line points
+  const nPts  = 80;
+  const lineX = Array.from({length:nPts}, (_,i) => i * L0*1.1 / (nPts-1));
+  const lineY = lineX.map(w => Math.max(0, V0*(1 - w/L0)));
+  const lineData = lineX.map((x,i) => ({x, y:lineY[i]}));
+
+  // Ref lines
+  const refH = [{x:0,y:vRef},{x:rm,y:vRef}];
+  const refV = [{x:rm,y:0},{x:rm,y:vRef}];
+
+  // Zone dots
+  const zoneDatasets = [3,2,1,0].map((zi, order) => {
+    const w = data.ws[zi], v = data.vs[zi];
+    if (!(w>0 && v>0)) return null;
+    return {
+      label: CFG[key].pcts[zi],
+      data: [{x:w, y:v}],
+      backgroundColor: ZONE_COLORS[zi],
+      borderColor: '#fff',
+      borderWidth: 2,
+      pointRadius: 8,
+      pointStyle: 'circle',
+      type: 'scatter',
+      order: order+3,
+    };
+  }).filter(Boolean);
+
+  const xMax = Math.max(L0*1.15, ...data.ws.filter(w=>w>0)) * 1.2;
+  const yMax = Math.max(V0*1.15, 1.0);
+  const xStep = key==='SQ' ? 20 : 5;
+
+  state.charts[canvasId] = new Chart(canvas, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: '回帰直線',
+          data: lineData,
+          type: 'line',
+          borderColor: '#0D1B33',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          order: 10,
+        },
+        {
+          label: '基準速度（横）',
+          data: refH,
+          type: 'line',
+          borderColor: '#03C49D',
+          borderWidth: 1.5,
+          borderDash: [5,4],
+          pointRadius: 0,
+          fill: false,
+          order: 9,
+        },
+        {
+          label: '1RM（縦）',
+          data: refV,
+          type: 'line',
+          borderColor: '#03C49D',
+          borderWidth: 1.5,
+          borderDash: [5,4],
+          pointRadius: 0,
+          fill: false,
+          order: 9,
+        },
+        {
+          label: `1RM ${fmt1(rm)} kg`,
+          data: [{x:rm, y:vRef}],
+          backgroundColor: '#03C49D',
+          borderColor: '#fff',
+          borderWidth: 2,
+          pointRadius: 10,
+          pointStyle: 'star',
+          type: 'scatter',
+          order: 1,
+        },
+        ...zoneDatasets,
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { font: { size: 10 }, boxWidth: 10, filter: i => i.text !== '基準速度（横）' && i.text !== '1RM（縦）' },
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.dataset.label==='回帰直線'||ctx.dataset.label==='基準速度（横）'||ctx.dataset.label==='1RM（縦）') return null;
+              return `${ctx.dataset.label}: (${fmt1(ctx.parsed.x)} kg, ${fmt2(ctx.parsed.y)} m/s)`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          min: 0,
+          max: xMax,
+          ticks: { stepSize: xStep, font:{size:10} },
+          title: { display:true, text:'重量 [kg]', font:{size:11} },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+        y: {
+          type: 'linear',
+          min: 0,
+          max: Math.ceil(yMax*5)/5,
+          ticks: { stepSize: 0.2, font:{size:10} },
+          title: { display:true, text:'速度 [m/s]', font:{size:11} },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+      },
+    },
+  });
+}
+
+// ========================
+// GROUP COMPARISON
+// ========================
+function renderGroup() {
+  const ps = state.players;
+  if (ps.length < 2) return;
+
+  const allRM  = ps.map(p => p.bp.rm);
+  const allBW  = ps.map(p => p.bp.bwRatio);
+  const mu     = nanMean(allRM), sd = nanStd(allRM);
+  const muBW   = nanMean(allBW), sdBW = nanStd(allBW);
+  const ci = state.current;
+
+  // Stats table
+  const tableRows = ps.map((p,i) => {
+    const dv = devScore(p.bp.rm, mu, sd);
+    const gr = grade(dv);
+    const isYou = i===ci;
+    return `<tr>
+      <td>${p.name}${isYou?'<span class="you-badge">YOU</span>':''}</td>
+      <td style="text-align:center">${fmt1(p.bp.rm)}</td>
+      <td style="text-align:center">${fmt2(p.bp.bwRatio)}</td>
+      <td style="text-align:center">${fmt1(dv)}</td>
+      <td style="text-align:center"><span style="background:${gr.c};color:#fff;border-radius:3px;padding:2px 8px;font-weight:bold">${gr.g}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('group-content').innerHTML = `
+    <h2 style="font-size:14px;color:var(--navy);margin-bottom:12px">
+      ベンチプレス グループ内比較 (n=${ps.length})
+    </h2>
+    <div style="margin-bottom:6px;font-size:12px;color:var(--dgray)">
+      グループ平均 1RM: ${fmt1(mu)} kg｜1RM/体重: ${fmt2(muBW)} kg/BW
+    </div>
+
+    <table class="group-stats-table" style="margin-bottom:20px">
+      <thead><tr><th>選手名</th><th>1RM [kg]</th><th>1RM/体重</th><th>偏差値</th><th>評価</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+
+    <div class="group-grid">
+      <div class="chart-card">
+        <div class="card-title">分布図（1RM重量 vs 体重比）</div>
+        <canvas id="group-scatter" height="250"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">1RM重量 グループ内分布</div>
+        <canvas id="group-hist" height="250"></canvas>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    renderGroupScatter(ps, ci);
+    renderGroupHist(ps, ci, mu, sd);
+  }, 50);
+}
+
+function renderGroupScatter(ps, ci) {
+  const canvas = document.getElementById('group-scatter');
+  if (!canvas) return;
+  if (state.charts['group-scatter']) state.charts['group-scatter'].destroy();
+
+  const othersData = ps.filter((_,i)=>i!==ci).map(p=>({x:p.bp.bwRatio, y:p.bp.rm, name:p.name}));
+  const youData    = [{x:ps[ci].bp.bwRatio, y:ps[ci].bp.rm, name:ps[ci].name}];
+
+  state.charts['group-scatter'] = new Chart(canvas, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: '他のメンバー',
+          data: othersData,
+          backgroundColor: '#ADADAD',
+          borderColor: '#595959',
+          borderWidth: 1,
+          pointRadius: 7,
+        },
+        {
+          label: 'あなた',
+          data: youData,
+          backgroundColor: '#03C49D',
+          borderColor: '#fff',
+          borderWidth: 2,
+          pointRadius: 12,
+          pointStyle: 'star',
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        legend: { labels: { font:{size:11} } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              return `${d.name}: (${fmt2(d.x)} BW, ${fmt1(d.y)} kg)`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { title:{display:true,text:'1RM/体重 [kg/BW]',font:{size:11}}, ticks:{font:{size:10}} },
+        y: { title:{display:true,text:'1RM重量 [kg]',font:{size:11}}, ticks:{font:{size:10}} },
+      },
+    },
+  });
+}
+
+function renderGroupHist(ps, ci, mu, sd) {
+  const canvas = document.getElementById('group-hist');
+  if (!canvas) return;
+  if (state.charts['group-hist']) state.charts['group-hist'].destroy();
+
+  const vals = ps.map(p => p.bp.rm);
+  const edges = [
+    Math.min(mu - 2.5*sd, Math.min(...vals) - 0.5),
+    mu - 1.5*sd, mu - 0.5*sd, mu + 0.5*sd, mu + 1.5*sd,
+    Math.max(mu + 2.5*sd, Math.max(...vals) + 0.5),
+  ];
+  const evCols = ['#BF1A1A','#D97310','#ADADAD','#03C49D','#00A66E'];
+  const evLabels = ['E','D','C','B','A'];
+
+  const cnts = Array(5).fill(0);
+  vals.forEach(v => {
+    for (let b=0;b<5;b++) {
+      if (v >= edges[b] && v < edges[b+1]) { cnts[b]++; break; }
+      if (b===4 && v >= edges[b]) cnts[b]++;
+    }
+  });
+
+  const midX = edges.slice(0,-1).map((e,i)=>(e+edges[i+1])/2);
+  const barW  = edges.slice(0,-1).map((e,i)=>edges[i+1]-e);
+  const youRM = ps[ci].bp.rm;
+
+  state.charts['group-hist'] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: evLabels,
+      datasets: [{
+        label: '人数',
+        data: cnts,
+        backgroundColor: evCols,
+        borderColor: '#fff',
+        borderWidth: 2,
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: ctx => `評価 ${evLabels[ctx[0].dataIndex]}（${fmt1(edges[ctx[0].dataIndex])}〜${fmt1(edges[ctx[0].dataIndex+1])} kg）`,
+            label: ctx => `${ctx.parsed.y} 名`,
+          },
+        },
+        afterDraw: () => {},
+      },
+      scales: {
+        x: { title:{display:true,text:'評価グレード',font:{size:11}}, ticks:{font:{size:11,weight:'bold'}} },
+        y: {
+          title:{display:true,text:'人数 [名]',font:{size:11}},
+          ticks:{stepSize:1, font:{size:10}},
+          min: 0,
+          max: Math.max(...cnts) + 1,
+        },
+      },
+    },
+    plugins: [{
+      id: 'youLine',
+      afterDraw(chart) {
+        const {ctx, chartArea, scales} = chart;
+        // 'あなた' line overlay - approximate position using scale
+        // map youRM to x position based on bin index
+        let binIdx = -1;
+        for (let b=0;b<5;b++) {
+          if (youRM >= edges[b] && (youRM < edges[b+1] || b===4)) { binIdx=b; break; }
+        }
+        if (binIdx < 0) return;
+        const xPos = scales.x.getPixelForValue(binIdx);
+        ctx.save();
+        ctx.setLineDash([6,4]);
+        ctx.strokeStyle = '#03C49D';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(xPos, chartArea.top);
+        ctx.lineTo(xPos, chartArea.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#03C49D';
+        ctx.font = 'bold 11px "Yu Gothic", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`あなた(${fmt1(youRM)}kg)`, xPos, chartArea.top + 14);
+        ctx.restore();
+      },
+    }],
+  });
+}
+
+// ========================
+// TAB SWITCHING
+// ========================
+function switchTab(tabName) {
+  ['input','result','group'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t===tabName);
+    document.querySelectorAll('.tab-btn').forEach((b,i) => {
+      if (['input','result','group'][i]===tabName) b.classList.add('active');
+      else b.classList.remove('active');
+    });
+  });
+  if (tabName==='result' && state.players.length>0) {
+    renderResult(state.current, 'result-panel-main');
+    updateGroupLabel();
+  }
+  if (tabName==='group' && state.players.length>=2) renderGroup();
+}
+</script>
+</body>
+</html>
