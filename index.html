@@ -170,6 +170,15 @@ body { font-family: 'Yu Gothic', 'Meiryo', sans-serif; background: var(--bg); co
   height: calc(100vh - 80px);
 }
 .no-data { color: var(--mgray); text-align: center; padding: 60px 20px; font-size: 15px; }
+.warn-box {
+  background: #fff6df;
+  border: 1px solid #f0d48b;
+  color: #6c4b00;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
 
 /* Summary boxes */
 .summary-bar {
@@ -490,12 +499,18 @@ const state = { players: [], current: 0, charts: {} };
 // INIT
 // ========================
 document.addEventListener('DOMContentLoaded', () => {
-  // Set today's date
-  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  // Set today's date in local timezone (avoid UTC date drift on some PCs)
+  const now = new Date();
+  const tzAdjusted = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  document.getElementById('f-date').value = tzAdjusted.toISOString().slice(0,10);
   // Build measurement row tables
   buildMeasRows('bp-rows', 'BP');
   buildMeasRows('sq-rows', 'SQ');
 });
+
+function isChartAvailable() {
+  return typeof window.Chart !== 'undefined';
+}
 
 function buildMeasRows(tbodyId, key) {
   const cfg = CFG[key];
@@ -698,7 +713,12 @@ function renderResult(idx, panelId) {
        </div>`
     : '';
 
+  const chartWarn = isChartAvailable()
+    ? ''
+    : '<div class="warn-box">グラフ表示ライブラリ（Chart.js）の読み込みに失敗したため、数値表のみ表示しています。ネットワーク接続を確認してください。</div>';
+
   panel.innerHTML = `
+    ${chartWarn}
     ${liftTabsHtml}
     <div id="${panelId}-lift-BP">${buildLiftHTML(p, 'BP', panelId)}</div>
     ${hasSQ ? `<div id="${panelId}-lift-SQ" style="display:none">${buildLiftHTML(p, 'SQ', panelId)}</div>` : ''}
@@ -805,6 +825,7 @@ function buildLiftHTML(player, key, panelId) {
 // CHART: L-V PROFILE
 // ========================
 function createLVChart(canvasId, player, key) {
+  if (!isChartAvailable()) return;
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const data = key==='BP' ? player.bp : player.sq;
@@ -996,6 +1017,7 @@ function renderGroup() {
 }
 
 function renderGroupScatter(ps, ci) {
+  if (!isChartAvailable()) return;
   const canvas = document.getElementById('group-scatter');
   if (!canvas) return;
   if (state.charts['group-scatter']) state.charts['group-scatter'].destroy();
@@ -1047,6 +1069,7 @@ function renderGroupScatter(ps, ci) {
 }
 
 function renderGroupHist(ps, ci, mu, sd) {
+  if (!isChartAvailable()) return;
   const canvas = document.getElementById('group-hist');
   if (!canvas) return;
   if (state.charts['group-hist']) state.charts['group-hist'].destroy();
