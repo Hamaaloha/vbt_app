@@ -284,12 +284,56 @@ canvas { max-width: 100%; }
 
 /* ===== PRINT ===== */
 @media print {
-  .app-header, .tabs, .input-panel, .lift-tabs, .main-layout { display: block !important; }
-  .main-layout { grid-template-columns: 1fr !important; }
-  .input-panel { display: none !important; }
-  .result-panel { height: auto; overflow: visible; }
-  .no-data { display: none; }
-  .btn-calc { display: none; }
+  @page { size: A4 portrait; margin: 10mm; }
+  html, body {
+    width: auto;
+    height: auto;
+    background: #fff !important;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .app-header,
+  .tabs,
+  #tab-input,
+  #tab-group,
+  .lift-tabs,
+  .btn-calc,
+  .no-data {
+    display: none !important;
+  }
+  #tab-result {
+    display: block !important;
+  }
+  #tab-result > div:first-child {
+    display: none !important;
+  }
+  .main-layout,
+  .input-panel,
+  .result-panel {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .chart-table-row {
+    display: block !important;
+  }
+  .chart-card,
+  .summary-bar,
+  .stats-bar {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 8mm;
+  }
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
 }
 </style>
 </head>
