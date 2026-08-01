@@ -778,22 +778,19 @@ function buildLiftHTML(player, key, panelId) {
     </div>`).join('');
 
   // Zone table
-  const measMap = {90:3, 80:2, 70:1, 60:0}; // pct → zone index
   const catColor = {'最大筋力':'#BF1A1A','高負荷':'#D97310','高パワー':'#00A66E','SPパワー':'#008DC0'};
   const tableRows = ZONE_CATS.map(([pct, cat]) => {
     const p  = parseInt(pct);
-    const zi = measMap[p];
-    const isMeas = zi !== undefined && data.ws[zi] > 0;
     const calcRow = data.table.find(r => r.pct === p);
-    const dispW = isMeas ? data.ws[zi] : (calcRow ? calcRow.w : NaN);
-    const dispV = isMeas ? data.vs[zi] : (calcRow ? calcRow.v : NaN);
-    const cls   = p===100 ? 'rm100' : (isMeas ? 'measured' : '');
+    const dispW = calcRow ? calcRow.w : NaN;
+    const dispV = calcRow ? calcRow.v : NaN;
+    const cls   = p===100 ? 'rm100' : '';
     return `
       <tr class="${cls}">
         <td><span class="color-swatch" style="background:${catColor[cat]||'#aaa'}"></span>${cat}</td>
         <td>${pct}</td>
-        <td style="${isMeas?'font-weight:bold;color:#0D1B33':''}">${fmt1(dispW)}</td>
-        <td style="${isMeas?'font-weight:bold;color:#008DC0':''}">${fmt2(dispV)}</td>
+        <td>${fmt1(dispW)}</td>
+        <td>${fmt2(dispV)}</td>
       </tr>`;
   }).join('');
 
